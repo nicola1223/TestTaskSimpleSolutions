@@ -74,3 +74,12 @@ class DatabaseManager:
         )
         self.execute_command(command, values)
         self.conn.commit()
+
+    def search(self, condition):
+        """
+        Search for rows in the database that match a given condition.
+        :param condition: SQL condition to search for.
+        :return: Result of the search query.
+        """
+        query = f"SELECT * FROM employees WHERE {condition};"
+        return self.execute_query(query)

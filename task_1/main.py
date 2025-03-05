@@ -23,6 +23,7 @@ def main():
         db_manager.create_table('employees', table_columns)
         for data in employees_data:
             db_manager.insert_data('employees', data)
+        print(db_manager.search('salary > 50000'))
 
 
 if __name__ == "__main__":
