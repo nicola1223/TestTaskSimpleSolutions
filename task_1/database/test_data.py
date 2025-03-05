@@ -11,7 +11,7 @@ employees_data = [
         'id': 2,
         'name': 'Иван',
         'position': 'Product Manager',
-        'salary': 60000.00
+        'salary': 50500.00
     },
     {
         'id': 3,

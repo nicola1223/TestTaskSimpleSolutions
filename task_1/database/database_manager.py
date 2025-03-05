@@ -51,11 +51,18 @@ class DatabaseManager:
         :param table_name: Name of the table to create.
         :param columns: Dict with a column names and its types.
         """
-        column_definitions = ', '.join(
-            f'{col[0]} {col[1]}' for col in columns.items()
+        column_definitions = sql.SQL(', ').join(
+            sql.SQL('{col_name} {data_type}').format(
+                col_name=sql.Identifier(col_name),
+                data_type=sql.SQL(data_type)
+            ) for col_name, data_type in columns.items()
         )
-        command = 'CREATE TABLE if NOT EXISTS ' \
-            f'{table_name} ({column_definitions});'
+        command = sql.SQL(
+            'CREATE TABLE IF NOT EXISTS {table_name} ({column_definitions});'
+        ).format(
+            table_name=sql.Identifier(table_name),
+            column_definitions=column_definitions
+        )
         self.execute_command(command)
 
     def insert_data(self, table_name, data):
@@ -81,5 +88,59 @@ class DatabaseManager:
         :param condition: SQL condition to search for.
         :return: Result of the search query.
         """
-        query = f"SELECT * FROM employees WHERE {condition};"
+        query = sql.SQL(
+            'SELECT * FROM employees WHERE {condition};'
+        ).format(
+            condition=sql.SQL(condition)
+        )
         return self.execute_query(query)
+
+    def update(self, table_name, data, condition):
+        """
+        Update rows in the database that match a given condition.
+        :param table_name: Name of the table to update.
+        :param data: Dict with new values for the columns.
+        :param condition: SQL condition (tuple: (sql_fragment, params)).
+        """
+        setter = sql.SQL(', ').join(
+            sql.SQL('{col_name} = {col_data}').format(
+                col_name=sql.Identifier(col_name),
+                col_data=sql.Placeholder()
+            ) for col_name in data.keys()
+        )
+        where = sql.SQL(condition[0]).format(
+            *[sql.Placeholder()] * len(condition[1])
+        )
+
+        command = sql.SQL(
+            'UPDATE {table} SET {setter} WHERE {where};'
+        ).format(
+            table=sql.Identifier(table_name),
+            setter=setter,
+            where=where
+        )
+
+        params = list(data.values()) + list(condition[1])
+
+        self.execute_command(command, params)
+
+    def delete(self, table_name, condition):
+        """
+        Delete rows in the database that match a given condition.
+        :param table_name: Name of the table to delete from.
+        :param condition: SQL condition (tuple: (sql_fragment, params)).
+        """
+        where = sql.SQL(condition[0]).format(
+            *[sql.Placeholder()] * len(condition[1])
+        )
+
+        command = sql.SQL(
+            'DELETE FROM {table} WHERE {where};'
+        ).format(
+            table=sql.Identifier(table_name),
+            where=where
+        )
+
+        params = list(condition[1])
+
+        self.execute_command(command, params)
